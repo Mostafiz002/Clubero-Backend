@@ -26,9 +26,33 @@ async function run() {
     //DB and collection
     const db = client.db("clubero_db");
     const clubsCollection = db.collection("clubs");
+    const usersCollection = db.collection("users");
 
     //apis here:)
 
+    //users api
+    app.post("/users", async (req, res) => {
+      try {
+        const user = req.body;
+
+        //check if user already exists
+        const email = user.email;
+        const userExists = await usersCollection.findOne({ email });
+        if (userExists) {
+          return res.send({ message: "User already exists" });
+        }
+
+        user.role = "member";
+        user.createdAt = new Date();
+
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to add user" });
+      }
+    });
+
+    ///api ends here///
     console.log("Connected to MongoDB!");
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);
