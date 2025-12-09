@@ -26,9 +26,10 @@ async function run() {
     //DB and collection
     const db = client.db("clubero_db");
     const clubsCollection = db.collection("clubs");
+    const eventsCollection = db.collection("events");
     const usersCollection = db.collection("users");
 
-    //apis here:)
+    ///apis here:)
 
     //users api
     app.post("/users", async (req, res) => {
@@ -49,6 +50,28 @@ async function run() {
         res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to add user" });
+      }
+    });
+
+    //clubs api
+    app.get("/clubs", async (req, res) => {
+      try {
+        const result = await clubsCollection.find().toArray();
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to get clubs" });
+      }
+    });
+
+    app.post("/clubs", async (req, res) => {
+      try {
+        const club = req.body;
+        club.createdAt = new Date();
+        club.updatedAt = new Date();
+        const result = await clubsCollection.insertOne(club);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to add club" });
       }
     });
 
