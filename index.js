@@ -63,6 +63,19 @@ async function run() {
       }
     });
 
+    app.get("/latest-clubs", async (req, res) => {
+      try {
+        const result = await clubsCollection
+          .find()
+          .limit(8)
+          .sort({ createdAt: -1 })
+          .toArray();
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to get latest clubs" });
+      }
+    });
+
     app.post("/clubs", async (req, res) => {
       try {
         const club = req.body;
