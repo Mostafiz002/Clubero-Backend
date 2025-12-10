@@ -53,6 +53,22 @@ async function run() {
       }
     });
 
+    app.get("/users/email", async (req, res) => {
+      try {
+        const email = req.query.email;
+
+        if (!email) {
+          return res.send({ message: "Failed to get user" });
+        }
+
+        const query = {};
+        query.email = email;
+        const result = await usersCollection.findOne(query);
+      } catch {
+        res.status(500).send({ message: "Failed to get user" });
+      }
+    });
+
     //clubs api
     app.get("/clubs", async (req, res) => {
       try {
@@ -85,6 +101,35 @@ async function run() {
         res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to add club" });
+      }
+    });
+
+    //events api
+
+    app.get("/events", async (req, res) => {
+      try {
+        const { limit = 0 } = req.query;
+
+        const result = await eventsCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .limit(Number(limit))
+          .toArray();
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to get events" });
+      }
+    });
+
+    app.post("/events", async (req, res) => {
+      try {
+        const event = req.body;
+        event.createdAt = new Date();
+
+        const result = await eventsCollection.insertOne(event);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to add event" });
       }
     });
 
