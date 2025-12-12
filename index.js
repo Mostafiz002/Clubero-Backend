@@ -2,7 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 //middleware
 app.use(express.json());
@@ -64,6 +65,7 @@ async function run() {
         const query = {};
         query.email = email;
         const result = await usersCollection.findOne(query);
+        res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to get user" });
       }
@@ -72,7 +74,14 @@ async function run() {
     //clubs api
     app.get("/clubs", async (req, res) => {
       try {
-        const result = await clubsCollection.find().toArray();
+        const { search } = req.query;
+        const query = {};
+
+        if (search) {
+          query.clubName = { $regex: search, $options: "i" };
+        }
+
+        const result = await clubsCollection.find(query).toArray();
         res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to get clubs" });
@@ -92,6 +101,17 @@ async function run() {
       }
     });
 
+    app.get("/clubs/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await clubsCollection.findOne(query);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to get club data" });
+      }
+    });
+
     app.post("/clubs", async (req, res) => {
       try {
         const club = req.body;
@@ -108,10 +128,15 @@ async function run() {
 
     app.get("/events", async (req, res) => {
       try {
-        const { limit = 0 } = req.query;
+        const { limit = 0, search } = req.query;
+        const query = {};
+
+        if (search) {
+          query.title = { $regex: search, $options: "i" };
+        }
 
         const result = await eventsCollection
-          .find()
+          .find(query)
           .sort({ createdAt: -1 })
           .limit(Number(limit))
           .toArray();
@@ -132,6 +157,43 @@ async function run() {
         res.status(500).send({ message: "Failed to add event" });
       }
     });
+
+    //payment (stripe) apis
+
+app.post("/payment-checkout-session", async (req, res) => {
+  const paymentInfo = req.body;
+
+  const amount = parseInt(paymentInfo.membershipFee) * 100;
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price_data: {
+            currency: "bdt", 
+            unit_amount: amount, 
+            product_data: { name: paymentInfo.clubName }, 
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      metadata: {
+        clubId: paymentInfo.clubId,
+        clubName: paymentInfo.clubName,
+        userEmail: paymentInfo.email,
+      },
+      customer_email: paymentInfo.email,
+      success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+    });
+
+    res.send({ url: session.url });
+  } catch (err) {
+    res.status(500).send({ message: "Failed to create Stripe session" });
+  }
+});
+
 
     ///api ends here///
     console.log("Connected to MongoDB!");
