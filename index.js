@@ -4,10 +4,35 @@ const app = express();
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./clubero-firebase-sdk.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 //middleware
 app.use(express.json());
 app.use(cors());
+
+const verifyFirebaseToken = async (req, res, next) => {
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = req.headers.authorization.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+
+  try {
+    const userInfo = await admin.auth().verifyIdToken(token);
+    req.token_email = userInfo.email;
+    console.log("after token validation ", userInfo);
+    next();
+  } catch {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+};
 
 //port and clients
 const port = process.env.PORT || 3000;
@@ -160,6 +185,42 @@ async function run() {
       }
     });
 
+    //membership api
+    app.post("/membership", verifyFirebaseToken, async (req, res) => {
+      try {
+        const membership = req.body;
+
+        //save in membership
+        const newMembership = {
+          ...membership,
+          membershipFee: 0,
+          joinedAt: new Date(),
+          status: "active",
+        };
+        const membershipResult = await membershipCollection.insertOne(
+          newMembership
+        );
+
+        //save payments
+        const newPayments = {
+          amount: 0,
+          customerEmail: membership.email,
+          clubId: membership.clubId,
+          clubName: membership.clubName,
+          transactionId: "none",
+          paymentStatus: "paid",
+          paidAt: new Date(),
+        };
+        const paymentResult = await paymentsCollection.insertOne(
+          newPayments
+        );
+
+        res.send({ membership: membershipResult, payment: paymentResult });
+      } catch {
+        res.status(500).send({ message: "Failed to add free membership" });
+      }
+    });
+
     //payment (stripe) apis
 
     app.post("/payment-checkout-session", async (req, res) => {
@@ -265,7 +326,7 @@ async function run() {
       }
     });
 
-    app.get("/payments/email/club", async (req, res) => {
+    app.get("/payments/email/club", verifyFirebaseToken, async (req, res) => {
       try {
         const { email, clubId } = req.query;
 
