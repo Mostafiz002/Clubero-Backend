@@ -27,7 +27,6 @@ const verifyFirebaseToken = async (req, res, next) => {
   try {
     const userInfo = await admin.auth().verifyIdToken(token);
     req.token_email = userInfo.email;
-    console.log("after token validation ", userInfo);
     next();
   } catch {
     return res.status(401).send({ message: "unauthorized access" });
@@ -56,6 +55,7 @@ async function run() {
     const usersCollection = db.collection("users");
     const paymentsCollection = db.collection("payments");
     const membershipCollection = db.collection("membership");
+    const eventRegistrationCollection = db.collection("eventRegistration");
 
     ///apis here:)
 
@@ -81,7 +81,7 @@ async function run() {
       }
     });
 
-    app.get("/users/email", async (req, res) => {
+    app.get("/users", verifyFirebaseToken, async (req, res) => {
       try {
         const email = req.query.email;
 
@@ -98,19 +98,47 @@ async function run() {
       }
     });
 
+    app.get("/users/role/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const query = { email };
+        const user = await usersCollection.findOne(query);
+        res.send({ role: user?.role || "member" });
+      } catch {
+        res.status(500).send({ message: "Failed to get user role" });
+      }
+    });
+
     //clubs api
     app.get("/clubs", async (req, res) => {
       try {
-        const { search } = req.query;
+        const { search, sort } = req.query;
         const query = {};
+        let sortOption = {};
 
+        // search by club name
         if (search) {
           query.clubName = { $regex: search, $options: "i" };
         }
 
-        const result = await clubsCollection.find(query).toArray();
+        // sorting logic
+        if (sort === "newest") {
+          sortOption = { createdAt: -1 };
+        } else if (sort === "oldest") {
+          sortOption = { createdAt: 1 };
+        } else if (sort === "fee_low") {
+          sortOption = { membershipFee: 1 };
+        } else if (sort === "fee_high") {
+          sortOption = { membershipFee: -1 };
+        }
+
+        const result = await clubsCollection
+          .find(query)
+          .sort(sortOption)
+          .toArray();
+
         res.send(result);
-      } catch {
+      } catch (error) {
         res.status(500).send({ message: "Failed to get clubs" });
       }
     });
@@ -173,6 +201,17 @@ async function run() {
       }
     });
 
+    app.get("/events/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await eventsCollection.findOne(query);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to get event data" });
+      }
+    });
+
     app.post("/events", async (req, res) => {
       try {
         const event = req.body;
@@ -182,6 +221,42 @@ async function run() {
         res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to add event" });
+      }
+    });
+
+    //event registration apis
+    app.get("/eventRegistration/:id", async (req, res) => {
+      try {
+        const eventId = req.params.id;
+        const { email } = req.query;
+
+        if (!eventId || !email) {
+          return res.status(400).send({ message: "Invalid request" });
+        }
+
+        const query = {
+          email,
+          eventId,
+        };
+
+        const result = await eventRegistrationCollection.findOne(query);
+
+        res.send(result || null);
+      } catch {
+        res.status(500).send({ message: "Failed to get eventRegistration" });
+      }
+    });
+
+    app.post("/eventRegistration", verifyFirebaseToken, async (req, res) => {
+      try {
+        const event = req.body;
+        event.status = "registered";
+        event.registeredAt = new Date();
+
+        const result = await eventRegistrationCollection.insertOne(event);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to add event registration" });
       }
     });
 
@@ -211,9 +286,7 @@ async function run() {
           paymentStatus: "paid",
           paidAt: new Date(),
         };
-        const paymentResult = await paymentsCollection.insertOne(
-          newPayments
-        );
+        const paymentResult = await paymentsCollection.insertOne(newPayments);
 
         res.send({ membership: membershipResult, payment: paymentResult });
       } catch {
