@@ -313,7 +313,7 @@ async function run() {
       }
     });
 
-    //dashboard overview api
+    //dashboard overview api (member)
     app.get("/dashboard/overview", verifyFirebaseToken, async (req, res) => {
       try {
         const email = req.token_email;
@@ -337,14 +337,61 @@ async function run() {
       }
     });
 
-    app.get("/dashboard/upcoming-events", async (req, res) => {
+    app.get(
+      "/dashboard/upcoming-events",
+      verifyFirebaseToken,
+      async (req, res) => {
+        try {
+          const { email } = req.query;
+          if (!email) {
+            return res.status(400).send({ message: "Email is required" });
+          }
+
+          const now = new Date();
+
+          //Find active memberships
+          const memberships = await membershipCollection
+            .find({ email, status: "active" })
+            .toArray();
+
+          // Get clubIds
+          const clubIds = memberships.map((m) => m.clubId);
+
+          if (clubIds.length === 0) {
+            return res.send([]);
+          }
+
+          // Find events of those clubs
+          const events = await eventsCollection
+            .find({ clubId: { $in: clubIds } })
+            .limit(4)
+            .toArray();
+
+          // Filter upcoming events
+          const upcomingEvents = events.filter((event) => {
+            return new Date(event.eventDate) > now;
+          });
+
+          // Sort by nearest date
+          upcomingEvents.sort(
+            (a, b) => new Date(a.eventDate) - new Date(b.eventDate)
+          );
+
+          res.send(upcomingEvents);
+        } catch (error) {
+          console.error(error);
+          res.status(500).send({ message: "Failed to get upcoming events" });
+        }
+      }
+    );
+
+    //dashboard my clubs api (member)
+    app.get("/dashboard/myClubs", async (req, res) => {
       try {
         const { email } = req.query;
         if (!email) {
           return res.status(400).send({ message: "Email is required" });
         }
-
-        const now = new Date();
 
         //Find active memberships
         const memberships = await membershipCollection
@@ -352,32 +399,15 @@ async function run() {
           .toArray();
 
         // Get clubIds
-        const clubIds = memberships.map((m) => m.clubId);
+        const clubObjectIds = memberships.map((m) => new ObjectId(m.clubId));
 
-        if (clubIds.length === 0) {
-          return res.send([]);
-        }
-
-        // Find events of those clubs
-        const events = await eventsCollection
-          .find({ clubId: { $in: clubIds } })
-          .limit(4)
+        // Find clubs of those clubs
+        const clubs = await clubsCollection
+          .find({ _id: { $in: clubObjectIds } })
           .toArray();
-
-        // Filter upcoming events
-        const upcomingEvents = events.filter((event) => {
-          return new Date(event.eventDate) > now;
-        });
-
-        // Sort by nearest date
-        upcomingEvents.sort(
-          (a, b) => new Date(a.eventDate) - new Date(b.eventDate)
-        );
-
-        res.send(upcomingEvents);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send({ message: "Failed to get upcoming events" });
+        res.send(clubs);
+      } catch {
+        res.status(500).send({ message: "Failed to load clubs" });
       }
     });
 
