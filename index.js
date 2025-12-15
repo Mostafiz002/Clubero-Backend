@@ -386,7 +386,7 @@ async function run() {
     );
 
     //dashboard my clubs api (member)
-    app.get("/dashboard/myClubs", async (req, res) => {
+    app.get("/dashboard/myClubs", verifyFirebaseToken, async (req, res) => {
       try {
         const { email } = req.query;
         if (!email) {
@@ -408,6 +408,32 @@ async function run() {
         res.send(clubs);
       } catch {
         res.status(500).send({ message: "Failed to load clubs" });
+      }
+    });
+
+    //dashboard my events api (member)
+    app.get("/dashboard/myEvents", async (req, res) => {
+      try {
+        const { email } = req.query;
+        if (!email) {
+          return res.status(400).send({ message: "Email is required" });
+        }
+
+        //Find active registrations
+        const memberships = await eventRegistrationCollection
+          .find({ email, status: "registered" })
+          .toArray();
+
+        // Get eventId
+        const eventObjectIds = memberships.map((m) => new ObjectId(m.eventId));
+
+        // Find events of those clubs
+        const events = await eventsCollection
+          .find({ _id: { $in: eventObjectIds } })
+          .toArray();
+        res.send(events);
+      } catch {
+        res.status(500).send({ message: "Failed to load events" });
       }
     });
 
