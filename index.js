@@ -412,7 +412,7 @@ async function run() {
     });
 
     //dashboard my events api (member)
-    app.get("/dashboard/myEvents", async (req, res) => {
+    app.get("/dashboard/myEvents", verifyFirebaseToken, async (req, res) => {
       try {
         const { email } = req.query;
         if (!email) {
@@ -560,6 +560,26 @@ async function run() {
         res.send(payment || null);
       } catch {
         res.status(500).send(null);
+      }
+    });
+
+    app.get("/payments", verifyFirebaseToken, async (req, res) => {
+      try {
+        const { email } = req.query;
+
+        if (!email) {
+          return res.send({ message: "Email is required" });
+        }
+
+        if (req.token_email !== email)
+          return res.status(401).send({ message: "unauthorized access" });
+
+        const query = { customerEmail: email };
+
+        const payments = await paymentsCollection.find(query).toArray();
+        res.send(payments);
+      } catch {
+        res.status(500).send({ message: "Failed to get payment data" });
       }
     });
 
