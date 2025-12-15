@@ -294,6 +294,93 @@ async function run() {
       }
     });
 
+    app.get("/membership/club", verifyFirebaseToken, async (req, res) => {
+      try {
+        const { clubId, email } = req.query;
+
+        if (!clubId || !email) {
+          return res.status(400).send({ message: "Invalid request" });
+        }
+        const query = {
+          clubId,
+          email,
+        };
+
+        const result = await membershipCollection.findOne(query);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to get membership data" });
+      }
+    });
+
+    //dashboard overview api
+    app.get("/dashboard/overview", verifyFirebaseToken, async (req, res) => {
+      try {
+        const email = req.token_email;
+
+        // total joined clubs
+        const totalClubs = await membershipCollection.countDocuments({
+          email,
+          status: "active",
+        });
+
+        // total registered events
+        const totalEvents = await eventRegistrationCollection.countDocuments({
+          email,
+        });
+        res.send({
+          totalClubs,
+          totalEvents,
+        });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to load dashboard overview" });
+      }
+    });
+
+    app.get("/dashboard/upcoming-events", async (req, res) => {
+      try {
+        const { email } = req.query;
+        if (!email) {
+          return res.status(400).send({ message: "Email is required" });
+        }
+
+        const now = new Date();
+
+        //Find active memberships
+        const memberships = await membershipCollection
+          .find({ email, status: "active" })
+          .toArray();
+
+        // Get clubIds
+        const clubIds = memberships.map((m) => m.clubId);
+
+        if (clubIds.length === 0) {
+          return res.send([]);
+        }
+
+        // Find events of those clubs
+        const events = await eventsCollection
+          .find({ clubId: { $in: clubIds } })
+          .limit(4)
+          .toArray();
+
+        // Filter upcoming events
+        const upcomingEvents = events.filter((event) => {
+          return new Date(event.eventDate) > now;
+        });
+
+        // Sort by nearest date
+        upcomingEvents.sort(
+          (a, b) => new Date(a.eventDate) - new Date(b.eventDate)
+        );
+
+        res.send(upcomingEvents);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to get upcoming events" });
+      }
+    });
+
     //payment (stripe) apis
 
     app.post("/payment-checkout-session", async (req, res) => {
