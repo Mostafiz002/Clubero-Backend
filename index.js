@@ -437,6 +437,63 @@ async function run() {
       }
     });
 
+    //(club manager) dashboard overview
+    app.get(
+      "/dashboard/overview/manager",
+      verifyFirebaseToken,
+      async (req, res) => {
+        try {
+          const email = req.token_email;
+
+          // 1. Get all clubs managed by this manager
+          const clubs = await clubsCollection
+            .find({ managerEmail: email })
+            .toArray();
+
+          const totalClubs = clubs.length;
+
+          // Extract club ObjectIds
+          const clubIds = clubs.map((club) => club._id.toString());
+
+          // 2. Total members (active)
+          const totalMembers = await membershipCollection.countDocuments({
+            clubId: { $in: clubIds },
+            status: "active",
+          });
+
+          // 3. Total events
+          const totalEvents = await eventsCollection.countDocuments({
+            clubId: { $in: clubIds },
+          });
+
+          // 4. Total revenue
+          const paidPayments = await paymentsCollection
+            .find({
+              clubId: { $in: clubIds },
+              paymentStatus: "paid",
+            })
+            .toArray();
+
+          const totalRevenue = paidPayments.reduce(
+            (sum, payment) => sum + (payment.amount || 0),
+            0
+          );
+
+          res.send({
+            totalClubs,
+            totalMembers,
+            totalEvents,
+            totalRevenue,
+          });
+        } catch (error) {
+          console.error(error);
+          res.status(500).send({
+            message: "Failed to load manager overview data",
+          });
+        }
+      }
+    );
+
     //payment (stripe) apis
 
     app.post("/payment-checkout-session", async (req, res) => {
