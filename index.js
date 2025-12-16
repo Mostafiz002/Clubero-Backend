@@ -167,15 +167,34 @@ async function run() {
       }
     });
 
-    app.post("/clubs", async (req, res) => {
+    app.post("/clubs", verifyFirebaseToken, async (req, res) => {
       try {
         const club = req.body;
+        club.status = "pending";
         club.createdAt = new Date();
-        club.updatedAt = new Date();
         const result = await clubsCollection.insertOne(club);
         res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to add club" });
+      }
+    });
+
+    app.patch("/clubs/:id", verifyFirebaseToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedData = req.body;
+        updatedData.updatedAt = new Date();
+
+        const query = { _id: new ObjectId(id) };
+
+        const updateDoc = {
+          $set: updatedData,
+        };
+
+        const result = await clubsCollection.updateOne(query, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update club" });
       }
     });
 
@@ -493,6 +512,30 @@ async function run() {
         }
       }
     );
+
+    //club manager dashboard mt clubs
+    app.get("/manager/clubs", async (req, res) => {
+      try {
+        const { email } = req.query;
+
+        if (!email) {
+          return res.status(400).send({ message: "Email is required" });
+        }
+
+        const query = {};
+
+        query.managerEmail = email;
+        query.status = "approved";
+
+        const result = await clubsCollection
+          .find(query)
+          .sort({ createdAt: -1 })
+          .toArray();
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to load clubs" });
+      }
+    });
 
     //payment (stripe) apis
 
