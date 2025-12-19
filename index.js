@@ -113,7 +113,9 @@ async function run() {
     app.get("/clubs", async (req, res) => {
       try {
         const { search, sort } = req.query;
-        const query = {};
+        const query = {
+          status: "approved",
+        };
         let sortOption = {};
 
         // search by club name
@@ -146,7 +148,7 @@ async function run() {
     app.get("/latest-clubs", async (req, res) => {
       try {
         const result = await clubsCollection
-          .find()
+          .find({ status: "approved" })
           .limit(8)
           .sort({ createdAt: -1 })
           .toArray();
@@ -464,7 +466,7 @@ async function run() {
         try {
           const email = req.token_email;
 
-          // 1. Get all clubs managed by this manager
+          // Get all clubs managed by this manager
           const clubs = await clubsCollection
             .find({ managerEmail: email })
             .toArray();
@@ -474,18 +476,18 @@ async function run() {
           // Extract club ObjectIds
           const clubIds = clubs.map((club) => club._id.toString());
 
-          // 2. Total members (active)
+          // Total members (active)
           const totalMembers = await membershipCollection.countDocuments({
             clubId: { $in: clubIds },
             status: "active",
           });
 
-          // 3. Total events
+          // Total events
           const totalEvents = await eventsCollection.countDocuments({
             clubId: { $in: clubIds },
           });
 
-          // 4. Total revenue
+          // Total revenue
           const paidPayments = await paymentsCollection
             .find({
               clubId: { $in: clubIds },
@@ -536,6 +538,67 @@ async function run() {
         res.status(500).send({ message: "Failed to load clubs" });
       }
     });
+
+    // (club manager) dashboard - Get Clubs WITH their Members
+    app.get("/manager/clubMembers", verifyFirebaseToken, async (req, res) => {
+      try {
+        const { email } = req.query;
+
+        // Get all clubs managed by this manager
+        const clubs = await clubsCollection
+          .find({ managerEmail: email, status: "approved" })
+          .toArray();
+
+        if (clubs.length === 0) {
+          return res.send([]);
+        }
+
+        // Get all memberships for these clubs
+        const clubIds = clubs.map((club) => club._id.toString());
+        const memberships = await membershipCollection
+          .find({
+            clubId: { $in: clubIds },
+          })
+          .toArray();
+
+        // COMBINE: Map clubs and attach matching memberships
+        const result = clubs.map((club) => {
+          const clubMembers = memberships.filter(
+            (member) => member.clubId === club._id.toString()
+          );
+          return {
+            ...club,
+            members: clubMembers,
+          };
+        });
+
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to load members" });
+      }
+    });
+
+    //update club member status
+    app.patch(
+      "/club-member/status/:id",
+      verifyFirebaseToken,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: {
+              status: "expired",
+            },
+          };
+
+          const result = await membershipCollection.updateOne(query, updateDoc);
+          res.send(result);
+        } catch {
+          res.status(500).send({ message: "Failed to update status" });
+        }
+      }
+    );
 
     //payment (stripe) apis
 
