@@ -233,7 +233,7 @@ async function run() {
       }
     });
 
-    app.post("/events", async (req, res) => {
+    app.post("/events", verifyFirebaseToken, async (req, res) => {
       try {
         const event = req.body;
         event.createdAt = new Date();
@@ -242,6 +242,35 @@ async function run() {
         res.send(result);
       } catch {
         res.status(500).send({ message: "Failed to add event" });
+      }
+    });
+
+    app.patch("/events/:id", verifyFirebaseToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedData = req.body;
+
+        const query = { _id: new ObjectId(id) };
+
+        const updateDoc = {
+          $set: updatedData,
+        };
+
+        const result = await eventsCollection.updateOne(query, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update event" });
+      }
+    });
+
+    app.delete("/events/:id", verifyFirebaseToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await eventsCollection.deleteOne(query);
+        res.send(result);
+      } catch {
+        res.status(500).send({ message: "Failed to delete event" });
       }
     });
 
@@ -515,8 +544,8 @@ async function run() {
       }
     );
 
-    //club manager dashboard mt clubs
-    app.get("/manager/clubs", async (req, res) => {
+    //club manager dashboard clubs
+    app.get("/manager/clubs", verifyFirebaseToken, async (req, res) => {
       try {
         const { email } = req.query;
 
@@ -600,7 +629,35 @@ async function run() {
       }
     );
 
-    //payment (stripe) apis
+    //club manager dashboard events
+    app.get("/manager/events", async (req, res) => {
+      try {
+        const { email } = req.query;
+
+        // Get all clubs managed by this manager
+        const clubs = await clubsCollection
+          .find({ managerEmail: email, status: "approved" })
+          .toArray();
+
+        if (clubs.length === 0) {
+          return res.send([]);
+        }
+
+        // Get all events from these clubs
+        const clubIds = clubs.map((club) => club._id.toString());
+        const events = await eventsCollection
+          .find({
+            clubId: { $in: clubIds },
+          })
+          .toArray();
+
+        res.send(events);
+      } catch {
+        res.status(500).send({ message: "Failed to load clubs" });
+      }
+    });
+
+    //==================payment (stripe) apis=============///
 
     app.post("/payment-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
@@ -746,7 +803,7 @@ async function run() {
       }
     });
 
-    ///api ends here///
+    ///==================api ends here====================///
     console.log("Connected to MongoDB!");
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);
