@@ -614,10 +614,11 @@ async function run() {
       async (req, res) => {
         try {
           const id = req.params.id;
+          const { status } = req.query;
           const query = { _id: new ObjectId(id) };
           const updateDoc = {
             $set: {
-              status: "expired",
+              status: status,
             },
           };
 
@@ -630,7 +631,7 @@ async function run() {
     );
 
     //club manager dashboard events
-    app.get("/manager/events", async (req, res) => {
+    app.get("/manager/events", verifyFirebaseToken, async (req, res) => {
       try {
         const { email } = req.query;
 
@@ -656,6 +657,61 @@ async function run() {
         res.status(500).send({ message: "Failed to load clubs" });
       }
     });
+
+    //club manager dashboard (event registered members)
+    app.get(
+      "/manager/events/members",
+      verifyFirebaseToken,
+      async (req, res) => {
+        try {
+          const { email } = req.query;
+
+          // Get clubs managed by this manager
+          const clubs = await clubsCollection
+            .find({ managerEmail: email, status: "approved" })
+            .toArray();
+
+          if (!clubs.length) {
+            return res.send([]);
+          }
+
+          // Extract club IDs
+          const clubIds = clubs.map((club) => club._id.toString());
+
+          // Get events under these clubs
+          const events = await eventsCollection
+            .find({ clubId: { $in: clubIds } })
+            .toArray();
+
+          if (!events.length) {
+            return res.send([]);
+          }
+
+          // Extract event IDs
+          const eventIds = events.map((event) => event._id.toString());
+
+          // Get event registrations
+          const registrations = await eventRegistrationCollection
+            .find({ eventId: { $in: eventIds } })
+            .toArray();
+
+          // Merge events with their registered members
+          const result = events.map((event) => ({
+            ...event,
+            members: registrations.filter(
+              (reg) => reg.eventId === event._id.toString()
+            ),
+          }));
+
+          res.send(result);
+        } catch (error) {
+          console.error(error);
+          res
+            .status(500)
+            .send({ message: "Failed to load event registrations" });
+        }
+      }
+    );
 
     //==================payment (stripe) apis=============///
 
