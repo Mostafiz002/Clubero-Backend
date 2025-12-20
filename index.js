@@ -767,6 +767,58 @@ async function run() {
       }
     );
 
+    // (admin) get all users
+    app.get(
+      "/admin/users",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const searchText = req.query.searchText;
+          const query = {};
+
+          if (searchText) {
+            query.$or = [
+              { displayName: { $regex: searchText, $options: "i" } },
+              { email: { $regex: searchText, $options: "i" } },
+            ];
+          }
+
+          const result = await usersCollection
+            .find(query)
+            .sort({ createdAt: -1 })
+            .toArray();
+          res.send(result);
+        } catch {
+          res.status(500).send({ message: "Failed to get users" });
+        }
+      }
+    );
+
+    app.patch(
+      "/admin/role/:id",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const { role } = req.query;
+          const query = { _id: new ObjectId(id) };
+
+          const updateDoc = {
+            $set: {
+              role: role,
+            },
+          };
+
+          const result = await usersCollection.updateOne(query, updateDoc);
+          res.send(result);
+        } catch {
+          res.status(500).send({ message: "Failed to update user role" });
+        }
+      }
+    );
+
     //==================payment (stripe) apis=============///
 
     app.post("/payment-checkout-session", async (req, res) => {
