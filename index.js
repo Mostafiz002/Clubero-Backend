@@ -15,6 +15,7 @@ admin.initializeApp({
 app.use(express.json());
 app.use(cors());
 
+//token verify
 const verifyFirebaseToken = async (req, res, next) => {
   if (!req.headers.authorization) {
     return res.status(401).send({ message: "unauthorized access" });
@@ -56,6 +57,19 @@ async function run() {
     const paymentsCollection = db.collection("payments");
     const membershipCollection = db.collection("membership");
     const eventRegistrationCollection = db.collection("eventRegistration");
+
+    //middleware with database access
+    //admin verify middleware
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.token_email;
+      const user = await usersCollection.findOne({ email });
+
+      if (!user || user.role !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+
+      next();
+    };
 
     ///apis here:)
 
@@ -709,6 +723,46 @@ async function run() {
           res
             .status(500)
             .send({ message: "Failed to load event registrations" });
+        }
+      }
+    );
+
+    // (admin) overview stats
+    app.get(
+      "/dashboard/stats",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const [totalClubs, totalEvents, totalMemberships] = await Promise.all(
+            [
+              clubsCollection.countDocuments({ status: "approved" }),
+              eventsCollection.countDocuments(),
+              clubsCollection.countDocuments(),
+            ]
+          );
+
+          // Total revenue
+          const payments = await paymentsCollection
+            .find({
+              paymentStatus: "paid",
+            })
+            .toArray();
+
+          const totalPayments = payments.reduce(
+            (sum, payment) => sum + (payment.amount || 0),
+            0
+          );
+
+          res.send({
+            totalClubs,
+            totalEvents,
+            totalMemberships,
+            totalPayments,
+            payments,
+          });
+        } catch {
+          res.status(500).send({ message: "Failed to load dashboard stats" });
         }
       }
     );
