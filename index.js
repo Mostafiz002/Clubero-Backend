@@ -819,6 +819,67 @@ async function run() {
       }
     );
 
+    // (admin) get all clubs for admin
+    app.get(
+      "/admin/clubs",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const clubs = await clubsCollection
+            .find()
+            .sort({ createdAt: -1 })
+            .toArray();
+
+          // Attach counts to each club
+          const clubsWithCounts = await Promise.all(
+            clubs.map(async (club) => {
+              const clubId = club._id.toString();
+
+              const [totalMembers, totalEvents] = await Promise.all([
+                membershipCollection.countDocuments({ clubId }),
+                eventsCollection.countDocuments({ clubId }),
+              ]);
+
+              return {
+                ...club,
+                totalMembers,
+                totalEvents,
+              };
+            })
+          );
+
+          res.send(clubsWithCounts);
+        } catch {
+          res.status(500).send({ message: "Failed to get clubs" });
+        }
+      }
+    );
+    //admin u[date club status
+    app.patch(
+      "/admin/status/:id",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const { status } = req.query;
+          const query = { _id: new ObjectId(id) };
+
+          const updateDoc = {
+            $set: {
+              status: status,
+            },
+          };
+
+          const result = await clubsCollection.updateOne(query, updateDoc);
+          res.send(result);
+        } catch {
+          res.status(500).send({ message: "Failed to update club status" });
+        }
+      }
+    );
+
     //==================payment (stripe) apis=============///
 
     app.post("/payment-checkout-session", async (req, res) => {
