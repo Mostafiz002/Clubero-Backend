@@ -880,6 +880,27 @@ async function run() {
       }
     );
 
+    //admin payments
+    app.get(
+      "/admin/payments",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const payments = await paymentsCollection
+            .find({ amount: { $gt: 0 } })
+            .sort({ createdAt: -1 })
+            .toArray();
+
+          res.send(payments);
+        } catch {
+          res.status(500).send({
+            message: "Failed to load payments",
+          });
+        }
+      }
+    );
+
     //==================payment (stripe) apis=============///
 
     app.post("/payment-checkout-session", async (req, res) => {
