@@ -50,7 +50,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     //DB and collection
     const db = client.db("clubero_db");
@@ -737,13 +737,13 @@ async function run() {
       verifyAdmin,
       async (req, res) => {
         try {
-          const [totalClubs, totalEvents, totalMemberships] = await Promise.all(
-            [
+          const [totalClubs, totalEvents, totalMemberships, totalUsers] =
+            await Promise.all([
               clubsCollection.countDocuments({ status: "approved" }),
               eventsCollection.countDocuments(),
               clubsCollection.countDocuments(),
-            ]
-          );
+              usersCollection.countDocuments(),
+            ]);
 
           // Total revenue
           const payments = await paymentsCollection
@@ -762,6 +762,7 @@ async function run() {
             totalEvents,
             totalMemberships,
             totalPayments,
+            totalUsers,
             payments,
           });
         } catch {
@@ -1116,7 +1117,7 @@ async function run() {
     });
 
     ///==================api ends here====================///
-    console.log("Connected to MongoDB!");
+    // console.log("Connected to MongoDB!");
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);
   }
