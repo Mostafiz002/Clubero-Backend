@@ -6,7 +6,10 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
 const admin = require("firebase-admin");
 
-const serviceAccount = require("./clubero-firebase-sdk.json");
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
+  "utf8"
+);
+const serviceAccount = JSON.parse(decoded);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -815,6 +818,71 @@ async function run() {
           res.send(result);
         } catch {
           res.status(500).send({ message: "Failed to update user role" });
+        }
+      }
+    );
+
+    //become club manager
+    app.patch("/become-club-manager", verifyFirebaseToken, async (req, res) => {
+      try {
+        const { email } = req.query;
+        const query = { email };
+        const updateDoc = {
+          $set: {
+            becomeCM: "applied",
+          },
+        };
+        const result = await usersCollection.updateOne(query, updateDoc);
+        res.send(result);
+      } catch {
+        res.status(500).send({
+          message: "Failed to update user",
+        });
+      }
+    });
+
+    app.patch(
+      "/admin/manageCM/:id",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const { becomeCM } = req.query;
+          const query = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: {
+              becomeCM: becomeCM,
+            },
+          };
+          const result = await usersCollection.updateOne(query, updateDoc);
+          res.send(result);
+        } catch {
+          res.status(500).send({
+            message: "Failed to update user",
+          });
+        }
+      }
+    );
+
+    app.get(
+      "/admin/cm-applied-users",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const query = {};
+          query.becomeCM = "applied";
+
+          const result = await usersCollection
+            .find(query)
+            .sort({ createdAt: -1 })
+            .toArray();
+          res.send(result);
+        } catch {
+          res
+            .status(500)
+            .send({ message: "Failed to get club-manager applied users" });
         }
       }
     );
