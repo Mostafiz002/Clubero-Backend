@@ -1,0 +1,6 @@
+node_modules
+.env
+clubero-firebase-sdk.json
+.vercel
+dist/
+build/
