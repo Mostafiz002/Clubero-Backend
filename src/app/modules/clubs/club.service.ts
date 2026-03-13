@@ -31,9 +31,14 @@ const updateClub = async (id: string, payload: any) => {
   return Club.findByIdAndUpdate(id, payload, { new: true });
 };
 
+const getLatestClubs = async () => {
+  return Club.find({ status: "approved" }).sort({ createdAt: -1 }).limit(8);
+};
+
 export const ClubService = {
   getClubs,
   getClubById,
   createClub,
   updateClub,
+  getLatestClubs,
 };
