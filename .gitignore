@@ -7,3 +7,4 @@ clubero-firebase-sdk.json
 dist/
 build/
 >>>>>>> d6b4e4955719ea03371183d821929b7f0d32efc5
+.env*.local
