@@ -38,8 +38,6 @@ const getUserRole = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const UserController = {
   createUser,
   getUser,

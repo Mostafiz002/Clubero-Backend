@@ -32,7 +32,6 @@ const getUserRole = async (email: string) => {
   };
 };
 
-
 export const UserService = {
   createUser,
   getUserByEmail,
