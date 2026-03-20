@@ -5,7 +5,10 @@ import verifyFirebaseToken from "../../middleware/verifyFirebaseToken";
 const router = Router();
 
 // CREATE STRIPE SESSION
-router.post("/payment-checkout-session", PaymentController.createCheckoutSession);
+router.post(
+  "/payment-checkout-session",
+  PaymentController.createCheckoutSession,
+);
 
 // SUCCESS HANDLER
 router.patch("/payment-success", PaymentController.paymentSuccess);
@@ -14,14 +17,16 @@ router.patch("/payment-success", PaymentController.paymentSuccess);
 router.get(
   "/payments/email/club",
   verifyFirebaseToken,
-  PaymentController.getPaymentByEmailAndClub
+  PaymentController.getPaymentByEmailAndClub,
 );
 
 // USER PAYMENTS
-router.get(
-  "/payments",
+router.get("/payments", verifyFirebaseToken, PaymentController.getUserPayments);
+
+router.patch(
+  "/become-club-manager",
   verifyFirebaseToken,
-  PaymentController.getUserPayments
+  PaymentController.becomeClubManager,
 );
 
 export const PaymentRoutes = router;

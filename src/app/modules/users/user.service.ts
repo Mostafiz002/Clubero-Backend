@@ -32,17 +32,9 @@ const getUserRole = async (email: string) => {
   };
 };
 
-const becomeClubManager = async (email: string) => {
-  return await User.findOneAndUpdate(
-    { email },
-    { becomeCM: "applied" },
-    { new: true },
-  );
-};
 
 export const UserService = {
   createUser,
   getUserByEmail,
   getUserRole,
-  becomeClubManager,
 };

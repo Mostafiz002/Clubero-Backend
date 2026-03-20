@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { Payment } from "./payment.model";
 import { Membership } from "../membership/membership.model";
+import { User } from "../users/user.model";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET as string);
 
@@ -96,5 +97,13 @@ export const PaymentService = {
 
   async getUserPayments(email: string) {
     return await Payment.find({ customerEmail: email });
+  },
+
+  async becomeClubManager(email: string) {
+    return await User.findOneAndUpdate(
+      { email },
+      { becomeCM: "applied" },
+      { new: true },
+    );
   },
 };

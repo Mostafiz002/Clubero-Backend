@@ -38,14 +38,10 @@ const getUserRole = async (req: Request, res: Response) => {
   }
 };
 
-const becomeClubManager =  async (req: Request, res: Response) => {
-  const email = req.token_email;
-  const data = await UserService.becomeClubManager(email as string);
-  res.send(data);
-}
+
 
 export const UserController = {
   createUser,
   getUser,
-  getUserRole,becomeClubManager
+  getUserRole,
 };

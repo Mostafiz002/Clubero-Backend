@@ -6,18 +6,8 @@ const router = express.Router();
 
 router.post("/", UserController.createUser);
 
-router.get(
-  "/",
-  verifyFirebaseToken,
-  UserController.getUser,
-);
+router.get("/", verifyFirebaseToken, UserController.getUser);
 
 router.get("/role/:email", UserController.getUserRole);
-
-router.patch(
-  "/become-club-manager",
-  verifyFirebaseToken,
-  UserController.becomeClubManager
-);
 
 export const UserRoutes = router;

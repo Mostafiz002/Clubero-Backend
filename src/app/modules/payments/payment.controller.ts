@@ -30,10 +30,7 @@ export const PaymentController = {
       return res.status(400).send(null);
     }
 
-    const data = await PaymentService.getPaymentByEmailAndClub(
-      email,
-      clubId
-    );
+    const data = await PaymentService.getPaymentByEmailAndClub(email, clubId);
     res.send(data || null);
   },
 
@@ -49,6 +46,12 @@ export const PaymentController = {
     }
 
     const data = await PaymentService.getUserPayments(email);
+    res.send(data);
+  },
+
+  becomeClubManager: async (req: Request, res: Response) => {
+    const email = req.token_email;
+    const data = await PaymentService.becomeClubManager(email as string);
     res.send(data);
   },
 };

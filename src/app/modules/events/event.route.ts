@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/", EventController.getEvents);
 router.get("/:id", EventController.getEvent);
 router.post("/", verifyFirebaseToken, EventController.createEvent);
-router.patch("/:id", EventController.updateEvent);
-router.delete("/:id", EventController.deleteEvent);
+router.patch("/:id", verifyFirebaseToken, EventController.updateEvent);
+router.delete("/:id", verifyFirebaseToken, EventController.deleteEvent);
 
 export const EventRoutes = router;
