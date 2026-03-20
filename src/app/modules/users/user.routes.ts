@@ -14,4 +14,10 @@ router.get(
 
 router.get("/role/:email", UserController.getUserRole);
 
+router.patch(
+  "/become-club-manager",
+  verifyFirebaseToken,
+  UserController.becomeClubManager
+);
+
 export const UserRoutes = router;

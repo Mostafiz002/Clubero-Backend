@@ -3,7 +3,7 @@ import { DashboardService } from "./dashboard.service";
 
 export const DashboardController = {
   memberOverview: async (req: Request, res: Response) => {
-    const email = req.token_email; // make sure you typed this in a middleware
+    const email = req.token_email; 
     const data = await DashboardService.getMemberOverview(email as string);
     res.send(data);
   },

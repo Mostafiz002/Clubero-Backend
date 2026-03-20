@@ -4,8 +4,8 @@ import { ClubRoutes } from "../modules/clubs/club.route";
 import { EventRoutes } from "../modules/events/event.route";
 import { EventRegistrationRoutes } from "../modules/Event_Registration/eventRegistration.route";
 import { MembershipRoutes } from "../modules/membership/membership.route";
-import { managerRoutes } from "../modules/Manager/manager.route";
 import { DashboardRoutes } from "../modules/dashboard/dashboard.route";
+import { AdminRoutes } from "../modules/admin/admin.routes";
 
 const router = Router();
 
@@ -15,6 +15,6 @@ router.use("/events", EventRoutes);
 router.use("/eventRegistration", EventRegistrationRoutes);
 router.use("/membership", MembershipRoutes);
 router.use("/dashboard",DashboardRoutes);
-router.use("/manager", managerRoutes);
+router.use("/admin", AdminRoutes);
 
 export default router;
