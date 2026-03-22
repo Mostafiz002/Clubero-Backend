@@ -1,42 +1,53 @@
 import { Request, Response } from "express";
 import { UserService } from "./user.service";
+import catchAsync from "../../utils/catchAsync";
+import sendResponse from "../../utils/sendResponse";
+import AppError from "../../utils/appErrors";
 
-const createUser = async (req: Request, res: Response) => {
-  try {
-    const result = await UserService.createUser(req.body);
-    res.send(result);
-  } catch {
-    res.status(500).send({ message: "Failed to add user" });
+const createUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.createUser(req.body);
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: "User created successfully",
+    data: result,
+  });
+});
+
+const getUser = catchAsync(async (req: Request, res: Response) => {
+  const email = req.query.email as string;
+
+  if (!email) {
+    throw new AppError(400, "Email is required");
   }
-};
 
-const getUser = async (req: Request, res: Response) => {
-  try {
-    const email = req.query.email as string;
+  const result = await UserService.getUserByEmail(email);
 
-    if (!email) {
-      return res.send({ message: "Failed to get user" });
-    }
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User retrieved successfully",
+    data: result || null,
+  });
+});
 
-    const result = await UserService.getUserByEmail(email);
+const getUserRole = catchAsync(async (req: Request, res: Response) => {
+  const email = req.params.email;
 
-    res.send(result);
-  } catch {
-    res.status(500).send({ message: "Failed to get user" });
+  if (!email) {
+    throw new AppError(400, "Email param is required");
   }
-};
 
-const getUserRole = async (req: Request, res: Response) => {
-  try {
-    const email = req.params.email;
+  const result = await UserService.getUserRole(email as string);
 
-    const result = await UserService.getUserRole(email as string);
-
-    res.send(result);
-  } catch {
-    res.status(500).send({ message: "Failed to get user role" });
-  }
-};
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User role retrieved successfully",
+    data: result,
+  });
+});
 
 export const UserController = {
   createUser,

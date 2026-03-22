@@ -1,71 +1,176 @@
 import { Request, Response } from "express";
 import { DashboardService } from "./dashboard.service";
+import catchAsync from "../../utils/catchAsync";
+import sendResponse from "../../utils/sendResponse";
+import AppError from "../../utils/appErrors";
 
-const memberOverview = async (req: Request, res: Response) => {
-  const email = req.token_email; 
-  const data = await DashboardService.getMemberOverview(email as string);
-  res.send(data);
-};
-
-const upcomingEvents = async (req: Request, res: Response) => {
+const memberOverview = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getUpcomingEvents(email as string);
-  res.send(data);
-};
 
-const myClubs = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getMemberOverview(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Member overview retrieved successfully",
+    data,
+  });
+});
+
+const upcomingEvents = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getMyClubs(email as string);
-  res.send(data);
-};
 
-const myEvents = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getUpcomingEvents(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Upcoming events retrieved successfully",
+    data,
+  });
+});
+
+const myClubs = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getMyEvents(email as string);
-  res.send(data);
-};
 
-const managerOverview = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getMyClubs(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "My clubs retrieved successfully",
+    data,
+  });
+});
+
+const myEvents = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getManagerOverview(email as string);
-  res.send(data);
-};
 
-const managerClubs = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getMyEvents(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "My events retrieved successfully",
+    data,
+  });
+});
+
+const managerOverview = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getManagerClubs(email as string);
-  res.send(data);
-};
 
-const clubMembers = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getManagerOverview(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Manager overview retrieved successfully",
+    data,
+  });
+});
+
+const managerClubs = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getClubMembers(email as string);
-  res.send(data);
-};
 
-const managerEvents = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getManagerClubs(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Manager clubs retrieved successfully",
+    data,
+  });
+});
+
+const clubMembers = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getManagerEvents(email as string);
-  res.send(data);
-};
 
-const eventRegisteredMembers = async (req: Request, res: Response) => {
+  if (!email) throw new AppError(401, "Unauthorized");
+
+  const data = await DashboardService.getClubMembers(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Club members retrieved successfully",
+    data,
+  });
+});
+
+const managerEvents = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
-  const data = await DashboardService.getEventRegisteredMembers(email as string);
-  res.send(data);
-};
 
-const updateMemberStatus = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { status } = req.query as { status: string };
-  const data = await DashboardService.updateMemberStatus(id as string, status);
-  res.send(data);
-};
+  if (!email) throw new AppError(401, "Unauthorized");
 
-const adminStats = async (req: Request, res: Response) => {
+  const data = await DashboardService.getManagerEvents(email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Manager events retrieved successfully",
+    data,
+  });
+});
+
+const eventRegisteredMembers = catchAsync(
+  async (req: Request, res: Response) => {
+    const email = req.token_email;
+
+    if (!email) throw new AppError(401, "Unauthorized");
+
+    const data = await DashboardService.getEventRegisteredMembers(email);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Event registered members retrieved successfully",
+      data,
+    });
+  }
+);
+
+const updateMemberStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.query as { status: string };
+
+    if (!id || !status) {
+      throw new AppError(400, "Invalid request");
+    }
+
+    const data = await DashboardService.updateMemberStatus(id as string, status);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Member status updated successfully",
+      data,
+    });
+  }
+);
+
+const adminStats = catchAsync(async (_req: Request, res: Response) => {
   const data = await DashboardService.getAdminStats();
-  res.send(data);
-};
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Admin stats retrieved successfully",
+    data,
+  });
+});
 
 export const DashboardController = {
   memberOverview,

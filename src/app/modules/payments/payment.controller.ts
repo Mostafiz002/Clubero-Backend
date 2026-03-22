@@ -1,65 +1,105 @@
 import { Request, Response } from "express";
 import { PaymentService } from "./payment.service";
+import catchAsync from "../../utils/catchAsync";
+import sendResponse from "../../utils/sendResponse";
+import AppError from "../../utils/appErrors";
 
-const createCheckoutSession = async (req: Request, res: Response) => {
+const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
   console.log("hit checkout");
-  const data = await PaymentService.createCheckoutSession(req.body);
-  res.send(data);
-};
 
-const paymentSuccess = async (req: Request, res: Response) => {
+  const data = await PaymentService.createCheckoutSession(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Checkout session created successfully",
+    data,
+  });
+});
+
+const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
   const { session_id } = req.query as { session_id: string };
 
   if (!session_id) {
-    return res
-      .status(400)
-      .send({ success: false, message: "Missing session_id" });
+    throw new AppError(400, "Missing session_id");
   }
 
   const data = await PaymentService.handlePaymentSuccess(session_id);
-  res.send(data);
-};
 
-const getPaymentByEmailAndClub = async (req: Request, res: Response) => {
-  const { email, clubId } = req.query as {
-    email: string;
-    clubId: string;
-  };
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Payment processed successfully",
+    data,
+  });
+});
 
-  if (!email || !clubId) {
-    return res.status(400).send(null);
+const getPaymentByEmailAndClub = catchAsync(
+  async (req: Request, res: Response) => {
+    const { email, clubId } = req.query as {
+      email: string;
+      clubId: string;
+    };
+
+    if (!email || !clubId) {
+      throw new AppError(400, "Email and clubId are required");
+    }
+
+    const data = await PaymentService.getPaymentByEmailAndClub(
+      email,
+      clubId
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Payment retrieved successfully",
+      data: data || null,
+    });
   }
+);
 
-  const data = await PaymentService.getPaymentByEmailAndClub(email, clubId);
-  res.send(data || null);
-};
-
-const getUserPayments = async (req: Request, res: Response) => {
+const getUserPayments = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.query as { email: string };
 
   if (!email) {
-    return res.send({ message: "Email is required" });
+    throw new AppError(400, "Email is required");
   }
 
   if (req.token_email !== email) {
-    return res.status(401).send({ message: "unauthorized access" });
+    throw new AppError(401, "Unauthorized access");
   }
 
   const data = await PaymentService.getUserPayments(email);
-  res.send(data);
-};
 
-const becomeClubManager = async (req: Request, res: Response) => {
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User payments retrieved successfully",
+    data,
+  });
+});
+
+const becomeClubManager = catchAsync(async (req: Request, res: Response) => {
   const email = req.token_email;
 
-  const result = await PaymentService.becomeClubManager(email as string);
-
-  if (!result.success) {
-    return res.status(400).send(result);
+  if (!email) {
+    throw new AppError(401, "Unauthorized");
   }
 
-  res.send(result);
-};
+  const result = await PaymentService.becomeClubManager(email);
+
+  if (!result.success) {
+    throw new AppError(400, result.message || "Failed to become club manager");
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Successfully became club manager",
+    data: result,
+  });
+});
 
 export const PaymentController = {
   createCheckoutSession,
