@@ -3,6 +3,10 @@ import { IEventRegistration } from "./eventRegistration.interface";
 
 const eventRegistrationSchema = new Schema<IEventRegistration>(
   {
+    clubId: { 
+      type: String,
+      required: true,
+    },
     eventId: {
       type: String,
       required: true,
@@ -13,6 +17,7 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
     },
     status: {
       type: String,
+      enum: ["registered", "cancelled"], 
       default: "registered",
     },
     registeredAt: {
@@ -22,10 +27,10 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
   },
   {
     collection: "eventRegistration",
-  },
+  }
 );
 
 export const EventRegistration = mongoose.model<IEventRegistration>(
   "EventRegistration",
-  eventRegistrationSchema,
+  eventRegistrationSchema
 );

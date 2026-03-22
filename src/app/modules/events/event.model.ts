@@ -6,6 +6,7 @@ const eventSchema = new Schema<IEvent>({
     type: String,
     required: true,
   },
+
   description: String,
 
   clubId: {
@@ -16,6 +17,24 @@ const eventSchema = new Schema<IEvent>({
   eventDate: {
     type: Date,
     required: true,
+  },
+
+  location: {
+    type: String,
+  },
+
+  isPaid: {
+    type: Boolean,
+    default: false,
+  },
+
+  eventFee: {
+    type: Number,
+    default: 0,
+  },
+
+  bannerImage: {
+    type: String,
   },
 
   createdAt: {

@@ -6,5 +6,9 @@ export interface IEvent {
   description?: string;
   clubId: string;
   eventDate: Date;
+  location?: string;
+  isPaid?: boolean;
+  eventFee?: number;
+  bannerImage?: string;
   createdAt?: Date;
 }
