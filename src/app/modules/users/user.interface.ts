@@ -6,5 +6,6 @@ export interface IUser {
   displayName: string;
   photoURL?: string;
   role: "admin" | "member" | "manager";
+  becomeCM?: "none" | "applied" | "approved" | "rejected";
   createdAt?: Date;
 }

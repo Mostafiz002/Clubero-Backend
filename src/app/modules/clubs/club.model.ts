@@ -6,27 +6,55 @@ const clubSchema = new Schema<IClub>({
     type: String,
     required: true,
   },
-  clubDescription: {
+
+  description: {
     type: String,
   },
+
+  category: {
+    type: String,
+  },
+
+  location: {
+    type: String,
+  },
+
+  bannerImage: {
+    type: String,
+  },
+
   membershipFee: {
     type: Number,
     default: 0,
   },
+
   managerEmail: {
     type: String,
     required: true,
   },
+
+  managerName: {
+    type: String,
+  },
+
+  managerImage: {
+    type: String,
+  },
+
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   },
+
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  updatedAt: Date,
+
+  updatedAt: {
+    type: Date,
+  },
 });
 
 export const Club = mongoose.model<IClub>("Club", clubSchema);

@@ -1,12 +1,19 @@
-import { Types } from "mongoose";
-
 export interface IClub {
-  _id?: Types.ObjectId;
   clubName: string;
-  clubDescription: string;
-  membershipFee: number;
+
+  description?: string;
+  category?: string;
+  location?: string;
+  bannerImage?: string;
+
+  membershipFee?: number;
+
   managerEmail: string;
-  status: "pending" | "approved" | "rejected";
+  managerName?: string;
+  managerImage?: string;
+
+  status?: "pending" | "approved" | "rejected";
+
   createdAt?: Date;
   updatedAt?: Date;
 }

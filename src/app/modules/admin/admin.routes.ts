@@ -5,21 +5,21 @@ import verifyAdmin from "../../middleware/verifyAdmin";
 
 const router = Router();
 
-// router.use(verifyFirebaseToken, verifyAdmin);
+router.use(verifyFirebaseToken, verifyAdmin);
 
-// USERS
+// users
 router.get("/users", AdminController.getUsers);
 router.patch("/role/:id", AdminController.updateUserRole);
 
-// CLUB MANAGER REQUESTS
+// club manager requests
 router.get("/cm-applied-users", AdminController.getCMAppliedUsers);
 router.patch("/manageCM/:id", AdminController.updateCMStatus);
 
-// CLUBS
+// clubs
 router.get("/clubs", AdminController.getClubs);
 router.patch("/status/:id", AdminController.updateClubStatus);
 
-// PAYMENTS
+// payments
 router.get("/payments", AdminController.getPayments);
 
 export const AdminRoutes = router;

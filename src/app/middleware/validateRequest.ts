@@ -2,18 +2,20 @@ import { NextFunction, Request, Response } from "express";
 import { ZodTypeAny } from "zod";
 
 const validateRequest =
-  (schema: ZodTypeAny) =>
+  (schema: any) =>
   async (req: Request, _res: Response, next: NextFunction) => {
     try {
-      if (req.body?.data) {
-        try {
-          req.body = JSON.parse(req.body.data);
-        } catch {
-          throw new Error("Invalid JSON in 'data'");
-        }
+      if (schema.shape.body) {
+        req.body = await schema.shape.body.parseAsync(req.body);
       }
 
-      req.body = await schema.parseAsync(req.body);
+      if (schema.shape.query) {
+        req.query = await schema.shape.query.parseAsync(req.query);
+      }
+
+      if (schema.shape.params) {
+        req.params = await schema.shape.params.parseAsync(req.params);
+      }
 
       next();
     } catch (error) {
