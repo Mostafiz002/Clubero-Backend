@@ -84,6 +84,6 @@ The backend has now been completely restructured and upgraded:
 - ✅ Added Global Error Handler with custom `AppError`  
 - ✅ Used catchAsync to eliminate repetitive try-catch blocks  
 - ✅ Standardized responses using sendResponse utility
-- ✅ Refactored into a modular, scalable folder structure 
+- ✅ Refactored into a modular, scalable folder structure .
 
 ---
