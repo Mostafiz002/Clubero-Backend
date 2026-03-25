@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - run: npm install
-      - run: npm run build
+        run: npm run build
 
       - name: Install Vercel CLI
-      - run: npm install -g vercel
+        run: npm install -g vercel
 
       - name: Pull Env
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
@@ -25,7 +25,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build with Vercel
-      - run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy
-      - run: vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }}
