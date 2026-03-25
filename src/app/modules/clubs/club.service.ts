@@ -32,7 +32,7 @@ const updateClub = async (id: string, payload: any) => {
 };
 
 const getLatestClubs = async () => {
-  return Club.find({ status: "approved" }).sort({ createdAt: -1 }).limit(8);
+  return Club.find().sort({ createdAt: -1 }).limit(8);
 };
 
 export const ClubService = {
