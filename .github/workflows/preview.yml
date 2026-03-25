@@ -1,4 +1,4 @@
-name: Preview Deploy
+name: Preview Deployment
 
 on:
   push:
@@ -12,9 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: npm install
-      - run: npm run build
+      - name: Install dependencies
+        run: npm install
 
-      - run: npm install -g vercel
+      - name: Build project
+        run: npm run build
 
-      - run: vercel --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project (Vercel)
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Preview
+        run: vercel deploy --prebuilt --yes --token=${{ secrets.VERCEL_TOKEN }}
