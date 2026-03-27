@@ -28,3 +28,4 @@ jobs:
 
       - name: Deploy to Vercel
         run: vercel deploy --token=${{ secrets.VERCEL_TOKEN }}
+        
