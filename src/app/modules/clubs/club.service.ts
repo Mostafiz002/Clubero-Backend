@@ -1,5 +1,5 @@
 import { Club } from "./club.model";
-import { cacheWrapper } from "../../utils/redisCache"; 
+import { cacheWrapper } from "../../utils/cacheWrapper"; 
 import { invalidateCache } from "../../utils/invalidateCache";
 
 const getClubs = async (search?: string, sort?: string) => {

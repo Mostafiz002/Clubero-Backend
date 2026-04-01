@@ -4,6 +4,7 @@ import notFound from "./app/middleware/notFound";
 import router from "./app/routes";
 import helmet from "helmet";
 import globalErrorHandler from "./app/middleware/globalErrorHandler";
+import { globalRateLimiter } from "./app/middleware/rateLimiter";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // main route
+app.use(globalRateLimiter);
 app.use("/api/v1", router);
 
 app.get("/", (_req: Request, res: Response) => {

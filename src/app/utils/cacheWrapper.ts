@@ -16,20 +16,18 @@ export const cacheWrapper = async <T>(
   try {
     const cached = await redis.get(key);
     if (cached) {
-      console.log(`⚡ Cache hit: ${key}`);
       return JSON.parse(cached) as T;
     }
   } catch (err) {
-    console.error(`Redis read error for key ${key}:`, err);
+    console.error(`[ERROR] Redis read error for key ${key}:`, err);
   }
 
   const data = await fetchFn();
 
   try {
     await redis.set(key, JSON.stringify(data), "EX", ttl);
-    console.log(`💾 Cache set: ${key}`);
   } catch (err) {
-    console.error(`Redis write error for key ${key}:`, err);
+    console.error(`[ERROR] Redis write error for key ${key}:`, err);
   }
 
   return data;
