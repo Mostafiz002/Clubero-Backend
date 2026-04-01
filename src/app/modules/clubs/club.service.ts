@@ -1,19 +1,24 @@
 import { Club } from "./club.model";
+import { cacheWrapper } from "../../utils/redisCache"; 
 
 const getClubs = async (search?: string, sort?: string) => {
-  const query: any = { status: "approved" };
-  let sortOption: any = {};
+  const cacheKey = `clubs:${search || "all"}:${sort || "default"}`;
 
-  if (search) {
-    query.clubName = { $regex: search, $options: "i" };
-  }
+  return cacheWrapper(cacheKey, async () => {
+    const query: any = { status: "approved" };
+    let sortOption: any = {};
 
-  if (sort === "newest") sortOption = { createdAt: -1 };
-  else if (sort === "oldest") sortOption = { createdAt: 1 };
-  else if (sort === "fee_low") sortOption = { membershipFee: 1 };
-  else if (sort === "fee_high") sortOption = { membershipFee: -1 };
+    if (search) {
+      query.clubName = { $regex: search, $options: "i" };
+    }
 
-  return Club.find(query).sort(sortOption);
+    if (sort === "newest") sortOption = { createdAt: -1 };
+    else if (sort === "oldest") sortOption = { createdAt: 1 };
+    else if (sort === "fee_low") sortOption = { membershipFee: 1 };
+    else if (sort === "fee_high") sortOption = { membershipFee: -1 };
+
+    return Club.find(query).sort(sortOption);
+  }, 60); 
 };
 
 const getClubById = async (id: string) => {
