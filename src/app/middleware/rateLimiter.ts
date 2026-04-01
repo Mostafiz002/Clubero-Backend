@@ -1,41 +1,48 @@
-import { RateLimiterRedis } from 'rate-limiter-flexible';
-import { redis } from '../config/redis'; 
-import { Request, Response, NextFunction } from 'express';
+import { RateLimiterRedis } from "rate-limiter-flexible";
+import { redis } from "../config/redis";
+import { Request, Response, NextFunction } from "express";
 
-const limiter = new RateLimiterRedis({
+// limiter for POST & PATCH
+const writeLimiter = new RateLimiterRedis({
   storeClient: redis,
   points: 20,
   duration: 60,
-  keyPrefix: 'global_rl', 
+  keyPrefix: "rl_write",
 });
 
-export const globalRateLimiter = async (req: Request, res: Response, next: NextFunction) => {
-  // Apply only for POST and PATCH methods
-  if (req.method === 'POST' || req.method === 'PATCH') {
-    const key = req.ip || 'unknown';
+// Default limiter for others
+const readLimiter = new RateLimiterRedis({
+  storeClient: redis,
+  points: 100,
+  duration: 60,
+  keyPrefix: "rl_read",
+});
 
-    console.log(`[RATE LIMIT] Incoming ${req.method} request from: ${key}`);
+export const globalRateLimiter = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const key = req.ip || "unknown";
+  try {
+    let result;
 
-    try {
-      const result = await limiter.consume(key);
-
-      console.log(
-        `[RATE LIMIT] Allowed - ${key} | Remaining: ${result.remainingPoints}`
-      );
-
-      next();
-    } catch (rejRes: any) {
-      console.warn(
-        `[RATE LIMIT] Blocked - ${key} | Retry after: ${Math.round(
-          rejRes.msBeforeNext / 1000
-        )}s`
-      );
-
-      res.status(429).json({
-        message: 'Too many requests. Please try again later.',
-      });
+    if (req.method === "POST" || req.method === "PATCH") {
+      result = await writeLimiter.consume(key);
+    } else {
+      result = await readLimiter.consume(key);
     }
-  } else {
+
     next();
+  } catch (rejRes: any) {
+    console.warn(
+      `[RATE LIMIT BLOCKED] ${key} | Retry after: ${Math.round(
+        rejRes.msBeforeNext / 1000,
+      )}s`,
+    );
+
+    res.status(429).json({
+      message: "Too many requests. Please try again later.",
+    });
   }
 };

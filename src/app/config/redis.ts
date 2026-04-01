@@ -55,6 +55,5 @@ const shutdown = async (signal: string) => {
     process.exit(0);
   }
 };
-
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);
