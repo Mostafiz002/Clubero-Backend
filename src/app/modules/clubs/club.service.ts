@@ -1,5 +1,6 @@
 import { Club } from "./club.model";
 import { cacheWrapper } from "../../utils/redisCache"; 
+import { invalidateCache } from "../../utils/invalidateCache";
 
 const getClubs = async (search?: string, sort?: string) => {
   const cacheKey = `clubs:${search || "all"}:${sort || "default"}`;
@@ -28,12 +29,20 @@ const getClubById = async (id: string) => {
 const createClub = async (payload: any) => {
   payload.status = "pending";
   payload.createdAt = new Date();
-  return Club.create(payload);
+  const club = await Club.create(payload);
+
+  await invalidateCache("clubs:*");
+
+  return club;
 };
 
 const updateClub = async (id: string, payload: any) => {
   payload.updatedAt = new Date();
-  return Club.findByIdAndUpdate(id, payload, { new: true });
+  const updatedClub = await Club.findByIdAndUpdate(id, payload, { new: true });
+
+  await invalidateCache("clubs:*");
+
+  return updatedClub;
 };
 
 const getLatestClubs = async () => {

@@ -3,7 +3,7 @@ import Redis from "ioredis";
 const REDIS_URL = process.env.REDIS_URL;
 
 if (!REDIS_URL) {
-  throw new Error("❌ Redis URL is not defined in env");
+  throw new Error("Redis URL is not defined in env");
 }
 
 const globalForRedis = global as unknown as {
